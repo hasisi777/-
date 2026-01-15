@@ -21,7 +21,8 @@ const App: React.FC = () => {
 
   const checkApiKey = () => {
     const localKey = localStorage.getItem('gemini_api_key');
-    const envKey = process.env.API_KEY;
+    // Safe access to process.env
+    const envKey = (typeof process !== 'undefined' && process.env && process.env.API_KEY) ? process.env.API_KEY : '';
 
     if (localKey || envKey) {
        setHasApiKey(true);

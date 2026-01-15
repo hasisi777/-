@@ -3,8 +3,11 @@ import { DetailImageSegment, PageLength, ProductInfo } from "../types";
 
 // Helper to get fresh AI instance with current key
 const getAI = () => {
+  // Safe access to process.env
+  const envKey = (typeof process !== 'undefined' && process.env && process.env.API_KEY) ? process.env.API_KEY : '';
+  
   // Try to get key from LocalStorage first (User override), then Environment
-  const apiKey = localStorage.getItem('gemini_api_key') || process.env.API_KEY;
+  const apiKey = localStorage.getItem('gemini_api_key') || envKey;
   
   if (!apiKey) {
     throw new Error("API Key가 없습니다. 우측 상단 'API Key 설정' 버튼을 눌러 키를 입력해주세요.");
