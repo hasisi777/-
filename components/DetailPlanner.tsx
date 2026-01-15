@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { ProductInfo, DetailImageSegment, PageLength } from '../types';
 import { suggestFeatures, planDetailPage, generateImageSection } from '../services/geminiService';
+import { overlayTextOnImage } from '../utils/imageUtils';
 
 const DetailPlanner: React.FC = () => {
   // State for Input Step
@@ -91,20 +92,20 @@ const DetailPlanner: React.FC = () => {
     setStep(3);
     setGeneratingCount(segments.length);
     
-    // Process sequentially to manage resources better or parallel? 
-    // Parallel might hit rate limits, but let's try mapping with Promise.all for speed if quota allows.
-    // For safer UX, let's do one by one or small batches. Let's do parallel but update state individually.
-    
     const generatePromises = segments.map(async (segment) => {
       // Mark as generating
       setSegments(prev => prev.map(s => s.id === segment.id ? { ...s, isGenerating: true, error: undefined } : s));
       
       try {
-        const imageUrl = await generateImageSection(segment, refImage || undefined, '9:16');
-        setSegments(prev => prev.map(s => s.id === segment.id ? { ...s, imageUrl, isGenerating: false } : s));
+        // 1. Generate Clean Image (No text)
+        const rawImageUrl = await generateImageSection(segment, refImage || undefined, '9:16');
+        
+        // 2. Overlay Text Client-side
+        const finalImageUrl = await overlayTextOnImage(rawImageUrl, segment.keyMessage);
+
+        setSegments(prev => prev.map(s => s.id === segment.id ? { ...s, imageUrl: finalImageUrl, isGenerating: false } : s));
       } catch (error: any) {
         console.error(`Failed to generate ${segment.id}`, error);
-        // Update UI with error message
         setSegments(prev => prev.map(s => s.id === segment.id ? { ...s, isGenerating: false, error: error.message || "생성 실패" } : s));
       } finally {
         setGeneratingCount(prev => prev - 1);
@@ -114,7 +115,6 @@ const DetailPlanner: React.FC = () => {
     try {
         await Promise.all(generatePromises);
     } catch (e: any) {
-        // This catch block might not be reached due to internal catches in map, but good for safety
         console.error("Batch generation finished with some errors");
     }
   };

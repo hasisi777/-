@@ -87,8 +87,8 @@ export const planDetailPage = async (
       - 9장 (Long): 위 구조에 Brand Story, Competitor Comparison(차별화) 추가
       
       제약 사항:
-      1. keyMessage는 이미지 안에 렌더링될 텍스트입니다. 반드시 **매력적인 한국어**로 작성하세요. 영어 헤드라인(Premium, Best 등)은 절대 금지합니다.
-      2. visualPrompt는 이미지 생성 AI에게 전달할 프롬프트입니다. 제품이 돋보이는 구도와 조명을 상세히 묘사하세요.
+      1. keyMessage는 이미지 위에 오버레이될 텍스트입니다. **짧고 강렬한 한국어 카피**로 작성하세요.
+      2. visualPrompt는 이미지 생성 AI에게 전달할 프롬프트입니다. 텍스트가 잘 보일 수 있도록 '여백(negative space)'이나 '깔끔한 배경(clean background)'을 포함하여 묘사하세요.
       3. logicalSections는 해당 섹션이 어떤 전략(예: Hook, Solution)에 해당하는지 태그로 남기세요.
     `;
 
@@ -117,8 +117,8 @@ export const planDetailPage = async (
             items: { type: Type.STRING },
             description: "적용된 논리 태그 (예: Hook, Solution)"
           },
-          keyMessage: { type: Type.STRING, description: "이미지에 렌더링될 한글 카피" },
-          visualPrompt: { type: Type.STRING, description: "이미지 생성용 영문 프롬프트" }
+          keyMessage: { type: Type.STRING, description: "이미지에 합성할 한글 카피" },
+          visualPrompt: { type: Type.STRING, description: "이미지 생성용 영문 프롬프트 (여백 포함)" }
         },
         required: ["id", "title", "logicalSections", "keyMessage", "visualPrompt"]
       }
@@ -163,13 +163,16 @@ export const generateImageSection = async (
     const ai = getAI();
     
     // Construct prompt for image generation
+    // IMPORTANT: Request NO TEXT in the image itself, to allow for clean overlay.
     const promptText = `
       Create a high-quality e-commerce product image.
       Aspect Ratio: ${ratio}.
       Visual Description: ${segment.visualPrompt}
       
-      IMPORTANT: Render the following text clearly in Korean within the image in a stylish, professional typography that matches the product mood.
-      Text to Render: "${segment.keyMessage}"
+      IMPORTANT:
+      - Do NOT render any text inside the image.
+      - Keep the composition clean with some negative space or a simple background.
+      - Make it look professional and photorealistic.
     `;
 
     const parts: any[] = [

@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { ThumbnailOptions } from '../types';
 import { generateImageSection } from '../services/geminiService';
+import { overlayTextOnImage } from '../utils/imageUtils';
 
 const ThumbnailGenerator: React.FC = () => {
   const [productName, setProductName] = useState('');
@@ -35,13 +36,13 @@ const ThumbnailGenerator: React.FC = () => {
     setIsGenerating(true);
     setResultImage(null);
 
-    // Construct a pseudo-segment for the service
     const visualPrompt = `
       Create a clickable Youtube/E-commerce style thumbnail.
       Style: ${options.style}.
       ${options.includeModel ? 'Include a human model interacting with the product.' : 'Focus solely on the product.'}
       Background should be eye-catching but not overwhelming.
       High contrast, vibrant colors.
+      Make sure to leave some negative space in the center or suitable area for text overlay.
     `;
 
     const dummySegment = {
@@ -53,8 +54,14 @@ const ThumbnailGenerator: React.FC = () => {
     };
 
     try {
+      // 1. Generate Clean Image
       const url = await generateImageSection(dummySegment, refImage, '1:1');
-      setResultImage(url);
+      
+      // 2. Overlay Text
+      const finalText = options.customText || productName;
+      const finalUrl = await overlayTextOnImage(url, finalText);
+      
+      setResultImage(finalUrl);
     } catch (error: any) {
       alert(error.message);
     } finally {
